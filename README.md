@@ -23,16 +23,15 @@ uv sync
 ## Usage
 
 ```sh
-uv run effekt bloom entropy.bin photo.png out.png
+uv run effekt bloom photo.png out.png
 uv run effekt regrain photo.png out.png --seed 1
 uv run effekt colours-natural strokes.bin photo.png out.png
 uv run effekt ebs photo.png out.png 5000
 uv run effekt quant photo.png out.png
 ```
 
-`entropy.bin` and `strokes.bin` can be any file; `colours-natural` draws one
-stroke per byte. Every effect has tuning options, listed by
-`uv run effekt <effect> --help`.
+`strokes.bin` can be any file; `colours-natural` draws one stroke per byte.
+Every effect has tuning options, listed by `uv run effekt <effect> --help`.
 
 The effects are also importable:
 

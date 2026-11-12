@@ -63,7 +63,7 @@ def _params[T](params_type: type[T], args: argparse.Namespace) -> T:
 def _bloom(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     return bloom.render(
         Reference.load(args.input),
-        args.entropy.read_bytes(),
+        args.entropy.read_bytes() if args.entropy else None,
         _params(bloom.BloomParams, args),
         progress,
     )
@@ -114,9 +114,9 @@ def build_parser() -> argparse.ArgumentParser:
     output_help = "PNG file to write"
 
     sub = command("bloom", bloom, _bloom, bloom.BloomParams)
-    sub.add_argument("entropy", type=Path, help="file whose bytes jitter each sample")
     sub.add_argument("input", type=Path, help=image_help)
     sub.add_argument("output", type=Path, help=output_help)
+    sub.add_argument("--entropy", type=Path, help="file whose bytes jitter each sample")
 
     sub = command("colours-natural", colours_natural, _colours, colours_natural.ColoursParams)
     sub.add_argument("strokes", type=Path, help="any file; each byte steers one stroke")

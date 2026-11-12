@@ -70,9 +70,13 @@ def test_reference_rejects_tiny_images():
         Reference.from_image(Image.new("RGB", (3, 10)))
 
 
-def test_bloom_requires_entropy(reference):
+def test_bloom_rejects_too_little_entropy(reference):
     with pytest.raises(ValueError, match="at least 4 bytes"):
         bloom.render(reference, b"abc")
+
+
+def test_bloom_entropy_is_optional(reference):
+    assert pixels(bloom.render(reference)).any()
 
 
 def test_bloom_brightens_light_areas_more():
@@ -142,7 +146,8 @@ def test_quant_threshold_limits_subdivision(reference):
 @pytest.mark.parametrize(
     "arguments",
     [
-        ["bloom", "{entropy}", "{image}", "{output}", "--scale", "1"],
+        ["bloom", "{image}", "{output}", "--scale", "1"],
+        ["bloom", "{image}", "{output}", "--scale", "1", "--entropy", "{entropy}"],
         ["colours-natural", "{entropy}", "{image}", "{output}", "--scale", "2"],
         ["ebs", "{image}", "{output}", "30"],
         ["quant", "{image}", "{output}"],
