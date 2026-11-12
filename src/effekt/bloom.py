@@ -9,8 +9,10 @@ import cairo
 
 from ._common import ProgressCallback, Reference, new_canvas, no_progress, option
 
-#: The entropy source is read as (x, y) byte pairs and must hold at least two.
+#: An entropy source is read as (x, y) byte pairs and must hold at least two.
 MIN_ENTROPY_BYTES = 4
+#: Stands in when no entropy is given: a single pair meaning "no jitter".
+NO_JITTER = bytes([128, 128])
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -23,11 +25,13 @@ class BloomParams:
 
 def render(
     reference: Reference,
-    entropy: bytes,
+    entropy: bytes | None = None,
     params: BloomParams = BloomParams(),
     progress: ProgressCallback = no_progress,
 ) -> cairo.ImageSurface:
-    if len(entropy) < MIN_ENTROPY_BYTES:
+    if entropy is None:
+        entropy = NO_JITTER
+    elif len(entropy) < MIN_ENTROPY_BYTES:
         raise ValueError(f"the entropy source must hold at least {MIN_ENTROPY_BYTES} bytes")
     if params.exposure <= 0:
         raise ValueError("exposure must be positive")
