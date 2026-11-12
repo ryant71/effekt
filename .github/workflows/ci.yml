@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
       # pycairo builds from source and needs the cairo headers.
       - run: sudo apt-get update && sudo apt-get install --yes libcairo2-dev
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
       - run: uv sync --locked
