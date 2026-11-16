@@ -11,7 +11,18 @@ from typing import Any
 
 import shtab
 
-from . import bloom, colours_natural, colours_spiral, ebs, hatch, quant, regrain
+from . import (
+    bloom,
+    colours_natural,
+    colours_spiral,
+    ebs,
+    halftone,
+    hatch,
+    quant,
+    regrain,
+    stipple,
+    string_art,
+)
 from ._common import ProgressCallback, Reference
 
 REDRAW_INTERVAL = 0.1
@@ -47,10 +58,19 @@ class Progress:
 def _add_params(parser: argparse.ArgumentParser, params_type: type) -> None:
     """Add one ``--option`` per field of an effect's parameter dataclass."""
     for field in dataclasses.fields(params_type):
+        flag = f"--{field.name.replace('_', '-')}"
+        if isinstance(field.default, bool):
+            parser.add_argument(
+                flag,
+                action=argparse.BooleanOptionalAction,
+                default=field.default,
+                help=field.metadata["help"],
+            )
+            continue
         # Optional fields default to None; the only one so far is an int seed.
         value_type = int if field.default is None else type(field.default)
         parser.add_argument(
-            f"--{field.name.replace('_', '-')}",
+            flag,
             type=value_type,
             default=field.default,
             help=field.metadata["help"],
@@ -92,6 +112,12 @@ def _ebs(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     )
 
 
+def _halftone(args: argparse.Namespace, progress: ProgressCallback) -> Any:
+    return halftone.render(
+        Reference.load(args.input), _params(halftone.HalftoneParams, args), progress
+    )
+
+
 def _hatch(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     return hatch.render(Reference.load(args.input), _params(hatch.HatchParams, args), progress)
 
@@ -103,6 +129,18 @@ def _quant(args: argparse.Namespace, progress: ProgressCallback) -> Any:
 def _regrain(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     return regrain.render(
         Reference.load(args.input), _params(regrain.RegrainParams, args), progress
+    )
+
+
+def _stipple(args: argparse.Namespace, progress: ProgressCallback) -> Any:
+    return stipple.render(
+        Reference.load(args.input), _params(stipple.StippleParams, args), progress
+    )
+
+
+def _string_art(args: argparse.Namespace, progress: ProgressCallback) -> Any:
+    return string_art.render(
+        Reference.load(args.input), _params(string_art.StringArtParams, args), progress
     )
 
 
@@ -149,6 +187,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("output", type=Path, help=output_help)
     sub.add_argument("density", type=int, help="number of swarm steps to draw")
 
+    sub = command("halftone", halftone, _halftone, halftone.HalftoneParams)
+    sub.add_argument("input", type=Path, help=image_help)
+    sub.add_argument("output", type=Path, help=output_help)
+
     sub = command("hatch", hatch, _hatch, hatch.HatchParams)
     sub.add_argument("input", type=Path, help=image_help)
     sub.add_argument("output", type=Path, help=output_help)
@@ -158,6 +200,14 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("output", type=Path, help=output_help)
 
     sub = command("regrain", regrain, _regrain, regrain.RegrainParams)
+    sub.add_argument("input", type=Path, help=image_help)
+    sub.add_argument("output", type=Path, help=output_help)
+
+    sub = command("stipple", stipple, _stipple, stipple.StippleParams)
+    sub.add_argument("input", type=Path, help=image_help)
+    sub.add_argument("output", type=Path, help=output_help)
+
+    sub = command("string-art", string_art, _string_art, string_art.StringArtParams)
     sub.add_argument("input", type=Path, help=image_help)
     sub.add_argument("output", type=Path, help=output_help)
 

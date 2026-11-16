@@ -25,6 +25,20 @@ def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(value, high))
 
 
+def blur(values: np.ndarray, sigma: float) -> np.ndarray:
+    """Gaussian blur of a 2D array, repeating the edge pixels outwards."""
+    if sigma <= 0.0:
+        return values
+    radius = max(int(3.0 * sigma + 0.5), 1)
+    kernel = np.exp(-0.5 * (np.arange(-radius, radius + 1) / sigma) ** 2)
+    kernel /= kernel.sum()
+    for axis in (0, 1):
+        pad = [(radius, radius) if a == axis else (0, 0) for a in (0, 1)]
+        padded = np.pad(values, pad, mode="edge")
+        values = np.apply_along_axis(np.convolve, axis, padded, kernel, mode="valid")
+    return values
+
+
 def no_progress(done: int, total: int) -> None:
     """Default progress callback: report nothing."""
 

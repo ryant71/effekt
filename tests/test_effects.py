@@ -1,3 +1,4 @@
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -5,7 +6,19 @@ import pytest
 import shtab
 from PIL import Image
 
-from effekt import Reference, bloom, colours_natural, colours_spiral, ebs, hatch, quant, regrain
+from effekt import (
+    Reference,
+    bloom,
+    colours_natural,
+    colours_spiral,
+    ebs,
+    halftone,
+    hatch,
+    quant,
+    regrain,
+    stipple,
+    string_art,
+)
 from effekt.cli import build_parser, main
 
 ENTROPY = bytes(range(256)) * 2
@@ -37,18 +50,24 @@ RENDERERS = {
     "colours-natural": lambda ref: colours_natural.render(ref, ENTROPY),
     "colours-spiral": lambda ref: colours_spiral.render(ref),
     "ebs": lambda ref: ebs.render(ref, 60),
+    "halftone": lambda ref: halftone.render(ref),
     "hatch": lambda ref: hatch.render(ref, hatch.HatchParams(seed=1)),
     "quant": lambda ref: quant.render(ref),
     "regrain": lambda ref: regrain.render(ref, regrain.RegrainParams(seed=1)),
+    "stipple": lambda ref: stipple.render(ref, stipple.StippleParams(dots=200, seed=1)),
+    "string-art": lambda ref: string_art.render(ref),
 }
 SCALES = {
     "bloom": 2,
     "colours-natural": 4,
     "colours-spiral": 2,
     "ebs": 1,
+    "halftone": 2,
     "hatch": 2,
     "quant": 4,
     "regrain": 4,
+    "stipple": 2,
+    "string-art": 2,
 }
 
 
@@ -158,6 +177,129 @@ def test_ebs_stops_at_density(reference):
     assert calls == [(24, 60), (48, 60), (60, 60)]
 
 
+def halves(dark: int = 40, light: int = 230) -> Reference:
+    """A 64x32 image whose left half is dark and right half is light."""
+    image = np.full((32, 64, 3), light, dtype=np.uint8)
+    image[:, :32] = dark
+    return Reference.from_image(Image.fromarray(image, "RGB"))
+
+
+def white(width: int = 16, height: int = 16) -> Reference:
+    return Reference.from_image(Image.new("RGB", (width, height), "white"))
+
+
+def test_halftone_prints_bigger_dots_where_the_image_is_darker():
+    result = pixels(halftone.render(halves(), halftone.HalftoneParams(cell=4.0)))[..., 0]
+
+    assert result[:, :56].mean() < result[:, 72:].mean() - 100
+
+
+def test_halftone_leaves_white_images_blank():
+    assert (pixels(halftone.render(white())) == 255).all()
+
+
+def test_halftone_cmyk_prints_in_colour():
+    red = Reference.from_image(Image.new("RGB", (16, 16), (200, 30, 30)))
+
+    grey = pixels(halftone.render(red))
+    colour = pixels(halftone.render(red, halftone.HalftoneParams(cmyk=True)))
+
+    # Cairo stores pixels as blue, green, red, alpha.
+    assert (grey[..., 0] == grey[..., 2]).all()
+    assert colour[..., 2].mean() > colour[..., 0].mean() + 50
+
+
+def test_halftone_separates_colours():
+    rgb = np.array([[[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [0.5, 0.5, 0.5]]])
+
+    cyan, magenta, yellow, black = halftone.separate(rgb)[:, 0, :]
+
+    assert np.allclose(cyan, [0, 0, 0, 0])
+    assert np.allclose(magenta, [1, 0, 0, 0])
+    assert np.allclose(yellow, [1, 0, 0, 0])
+    assert np.allclose(black, [0, 1, 0, 0.5])
+
+
+def test_stipple_finds_the_nearest_point():
+    rng = np.random.default_rng(0)
+    x, y = rng.random(40) * 48, rng.random(40) * 32
+
+    owner = stipple.nearest(x, y, 32, 48)
+
+    cell_y, cell_x = np.mgrid[0:32, 0:48] + 0.5
+    distance = np.hypot(cell_x[..., None] - x, cell_y[..., None] - y)
+    assert (owner == distance.argmin(axis=2)).mean() > 0.99
+
+
+def test_stipple_relaxing_spreads_the_dots_out():
+    rng = np.random.default_rng(0)
+    x, y = rng.random(50) * 32, rng.random(50) * 32
+
+    def closest_pair(x, y):
+        gaps = np.hypot(x[:, None] - x, y[:, None] - y)
+        return gaps[gaps > 0].min()
+
+    relaxed = stipple.relax(x, y, np.ones((32, 32)), 20, lambda done, total: None)
+
+    assert closest_pair(*relaxed) > closest_pair(x, y) * 3
+
+
+def test_stipple_puts_more_dots_where_the_image_is_darker():
+    params = stipple.StippleParams(scale=1, dots=300, size=1.0, seed=1)
+
+    result = pixels(stipple.render(halves(), params))[..., 0]
+
+    assert result[:, :28].mean() < result[:, 36:].mean() - 50
+
+
+def test_stipple_seed_changes_the_dots(reference):
+    first = pixels(stipple.render(reference, stipple.StippleParams(dots=100, seed=1)))
+    second = pixels(stipple.render(reference, stipple.StippleParams(dots=100, seed=2)))
+
+    assert not np.array_equal(first, second)
+
+
+def test_stipple_leaves_white_images_blank():
+    assert (pixels(stipple.render(white(), stipple.StippleParams(seed=1))) == 255).all()
+
+
+def test_string_art_winds_more_thread_over_darker_areas():
+    result = pixels(string_art.render(halves(), string_art.StringArtParams(scale=4)))[..., 0]
+
+    assert result[:, :112].mean() < result[:, 144:].mean() - 50
+
+
+def test_string_art_plan_is_one_unbroken_thread():
+    darkness = np.ones((32, 32))
+
+    path = string_art.plan(darkness, pins=24, lines=40, cover=0.05)
+
+    assert path[0] == 0
+    assert len(path) == 41
+    assert all(0 <= pin < 24 for pin in path)
+    # Never straight back, and never to a pin right next door.
+    assert all(a != c for a, c in zip(path, path[2:], strict=False))
+    assert all(min((a - b) % 24, (b - a) % 24) > 2 for a, b in pairwise(path))
+
+
+def test_string_art_stops_when_the_image_is_covered():
+    path = string_art.plan(np.full((32, 32), 0.1), pins=24, lines=10_000, cover=0.1)
+
+    assert len(path) < 1000
+
+
+def test_string_art_leaves_white_images_and_corners_blank(reference):
+    assert (pixels(string_art.render(white())) == 255).all()
+
+    result = pixels(string_art.render(reference))
+    assert (result[0, 0] == 255).all() and (result[-1, -1] == 255).all()
+
+
+def test_string_art_rejects_too_few_pins(reference):
+    with pytest.raises(ValueError, match="pins"):
+        string_art.render(reference, string_art.StringArtParams(pins=2))
+
+
 def test_hatch_follows_contours():
     # Brightness changes only from left to right, so the contours are vertical.
     luma = np.linspace(0, 255, 32)[None, :].repeat(32, axis=0)
@@ -228,9 +370,12 @@ def test_quant_threshold_limits_subdivision(reference):
         ["colours-natural", "{entropy}", "{image}", "{output}", "--scale", "2"],
         ["colours-spiral", "{image}", "{output}", "--scale", "1"],
         ["ebs", "{image}", "{output}", "30"],
+        ["halftone", "{image}", "{output}", "--scale", "1", "--cmyk"],
         ["hatch", "{image}", "{output}", "--scale", "1", "--seed", "3"],
         ["quant", "{image}", "{output}"],
         ["regrain", "{image}", "{output}", "--scale", "1", "--seed", "3"],
+        ["stipple", "{image}", "{output}", "--scale", "1", "--dots", "100", "--seed", "3"],
+        ["string-art", "{image}", "{output}", "--scale", "1", "--lines", "50"],
     ],
     ids=lambda arguments: arguments[0],
 )
@@ -267,15 +412,7 @@ def test_cli_prints_a_completion_script(shell, capsys):
         main(["--print-completion", shell])
     assert exit_info.value.code == 0
     script = capsys.readouterr().out
-    for effect in (
-        "bloom",
-        "colours-natural",
-        "colours-spiral",
-        "ebs",
-        "hatch",
-        "quant",
-        "regrain",
-    ):
+    for effect in SCALES:
         assert effect in script
     assert "--entropy" in script
 
@@ -283,5 +420,5 @@ def test_cli_prints_a_completion_script(shell, capsys):
 def test_cli_completes_paths_as_files():
     commands = build_parser()._subparsers._group_actions[0].choices
     paths = [a for sub in commands.values() for a in sub._actions if a.type is Path]
-    assert len(paths) == 16
+    assert len(paths) == 22
     assert all(a.complete == shtab.FILE for a in paths)

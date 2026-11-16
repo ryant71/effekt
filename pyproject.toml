@@ -44,7 +44,10 @@ extend-immutable-calls = [
     "effekt.colours_natural.ColoursParams",
     "effekt.colours_spiral.SpiralParams",
     "effekt.ebs.EbsParams",
+    "effekt.halftone.HalftoneParams",
     "effekt.hatch.HatchParams",
     "effekt.quant.QuantParams",
     "effekt.regrain.RegrainParams",
+    "effekt.stipple.StippleParams",
+    "effekt.string_art.StringArtParams",
 ]

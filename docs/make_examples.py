@@ -287,6 +287,48 @@ SECTIONS = (
         ),
     ),
     Section(
+        "halftone",
+        "Prints the image as a grid of dots, the way newspapers do. Every dot sits on a fixed "
+        "grid and only its size changes: big where the image is dark, small where it is light.",
+        (
+            Example(
+                "halftone-default",
+                "Defaults",
+                "{image} out.png",
+                "Black dots 8 output pixels apart, on a grid turned 45 degrees, on a canvas "
+                "twice the size of the input.",
+            ),
+            Example(
+                "halftone-cmyk",
+                "`--cmyk`",
+                "{image} out.png --cmyk",
+                "Four grids, one each of cyan, magenta, yellow and black ink, at different "
+                "angles so that the dots form rosettes instead of piling up.",
+            ),
+            Example(
+                "halftone-coarse",
+                "`--cell 20 --angle 15`",
+                "{image} out.png --cell 20 --angle 15",
+                "Dots further apart show the grid itself and lose the fine detail. `--angle` "
+                "turns the grid.",
+            ),
+            Example(
+                "halftone-fine",
+                "`--cell 4 --cmyk`",
+                "{image} out.png --cell 4 --cmyk",
+                "A fine screen: from a distance the dots merge into continuous colour.",
+            ),
+            Example(
+                "halftone-portrait",
+                "A portrait with `--scale 1`",
+                "{image} out.png --scale 1",
+                "`--cell` is in output pixels, so on a canvas the size of the input the same "
+                "dots are coarser relative to the picture.",
+                PORTRAIT,
+            ),
+        ),
+    ),
+    Section(
         "hatch",
         "Draws short pen strokes that follow the image's contours, like the lines of an "
         "engraving. Each stroke only crosses pixels darker than its own randomly chosen ink "
@@ -369,6 +411,89 @@ SECTIONS = (
                 "A portrait with `--scale 1`",
                 "{image} out.png --scale 1",
                 "The same pattern on a canvas the size of the input.",
+                PORTRAIT,
+            ),
+        ),
+    ),
+    Section(
+        "stipple",
+        "Draws the image with dots of one size, packed closer together where it is darker. The "
+        "dots are first scattered at random and then repeatedly nudged apart until they are "
+        "evenly spaced. Results vary between runs unless `--seed` is given.",
+        (
+            Example(
+                "stipple-default",
+                "Defaults",
+                "{image} out.png --seed 1",
+                "20,000 dots, relaxed 30 times, on a canvas twice the size of the input.",
+            ),
+            Example(
+                "stipple-unrelaxed",
+                "`--iterations 0`",
+                "{image} out.png --seed 1 --iterations 0",
+                "The dots where they first land. The tones are the same but the dots clump "
+                "and overlap; relaxing is what gives stippling its even texture.",
+            ),
+            Example(
+                "stipple-contrast",
+                "`--contrast 1`",
+                "{image} out.png --seed 1 --contrast 1",
+                "With darkness used as it is, dots spread over the mid-tones too and the "
+                "picture flattens. The default of 3 clears the light areas.",
+            ),
+            Example(
+                "stipple-few",
+                "`--dots 4000 --size 3`",
+                "{image} out.png --seed 1 --dots 4000 --size 3",
+                "Fewer, bigger dots keep only the main shapes.",
+            ),
+            Example(
+                "stipple-colour",
+                "`--colour 1 --contrast 1 --dots 30000 --size 2.5`",
+                "{image} out.png --seed 1 --colour 1 --contrast 1 --dots 30000 --size 2.5",
+                "Each dot takes the colour of the image beneath it. Many large dots and a low "
+                "contrast cover enough of the paper for the colours to read.",
+            ),
+            Example(
+                "stipple-portrait",
+                "A portrait with `--scale 1`",
+                "{image} out.png --seed 1 --scale 1",
+                "A larger input gets the same 20,000 dots, so each one covers less of the page.",
+                PORTRAIT,
+            ),
+        ),
+    ),
+    Section(
+        "string-art",
+        "Winds a single thread between pins set around the edge of the image, always heading "
+        "for the pin that crosses the most darkness not yet covered. The pins sit on the "
+        "ellipse that fits the image, so the corners stay empty.",
+        (
+            Example(
+                "string-default",
+                "Defaults",
+                "{image} out.png",
+                "300 pins and a fine, translucent thread. Winding stops when no line would "
+                "add anything, which here is well short of the 5000 lines allowed.",
+            ),
+            Example(
+                "string-few",
+                "`--lines 800`",
+                "{image} out.png --lines 800",
+                "Stopped early, only the darkest shapes have been found.",
+            ),
+            Example(
+                "string-thick",
+                "`--width 0.8 --opacity 0.6 --pins 120`",
+                "{image} out.png --width 0.8 --opacity 0.6 --pins 120",
+                "A heavier thread on fewer pins covers the image in far fewer lines and looks "
+                "more like the real craft, at the cost of detail.",
+            ),
+            Example(
+                "string-portrait",
+                "A portrait with `--scale 1`",
+                "{image} out.png --scale 1",
+                "On an image that is not square the pins follow an ellipse.",
                 PORTRAIT,
             ),
         ),

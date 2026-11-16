@@ -10,8 +10,11 @@ image and writes a PNG.
 | `colours-natural` | A pen wanders over the image, steered by the bytes of a file.       |
 | `colours-spiral`  | One line spirals out from the centre, thicker where the image is darker. |
 | `ebs`             | Swarms of entities flock across the image and leave coloured trails. |
+| `halftone`        | A grid of dots, each sized by how dark the image is beneath it. |
 | `hatch`           | Short pen strokes follow the image's contours, denser where it is darker. |
 | `quant`           | Subdivides the image wherever it has detail and strokes each cell.  |
+| `stipple`         | Evenly spaced dots, packed closer together where the image is darker. |
+| `string-art`      | One thread wound between pins around the edge until the picture appears. |
 
 ## Install
 
@@ -65,8 +68,11 @@ uv run effekt regrain photo.png out.png --seed 1
 uv run effekt colours-natural strokes.bin photo.png out.png
 uv run effekt colours-spiral photo.png out.png
 uv run effekt ebs photo.png out.png 5000
+uv run effekt halftone photo.png out.png --cmyk
 uv run effekt hatch photo.png out.png --seed 1
 uv run effekt quant photo.png out.png
+uv run effekt stipple photo.png out.png --seed 1
+uv run effekt string-art photo.png out.png
 ```
 
 `strokes.bin` can be any file; `colours-natural` draws one stroke per byte.
