@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import cairo
 import numpy as np
 
-from ._common import ProgressCallback, Reference, new_canvas, no_progress, option
+from ._common import ProgressCallback, Reference, blur, new_canvas, no_progress, option
 
 PROGRESS_STEPS = 10_000
 #: The edge strength that counts as "strong" when weighing it against ``bias``.
@@ -26,20 +26,6 @@ class HatchParams:
     bias: float = option(0.05, "pull towards --angle; 0 follows the image everywhere")
     colour: float = option(0.0, "how much of the image colour the ink takes (0 = black)")
     seed: int | None = option(None, "random seed, for a reproducible render")
-
-
-def blur(values: np.ndarray, sigma: float) -> np.ndarray:
-    """Gaussian blur of a 2D array, repeating the edge pixels outwards."""
-    if sigma <= 0.0:
-        return values
-    radius = max(int(3.0 * sigma + 0.5), 1)
-    kernel = np.exp(-0.5 * (np.arange(-radius, radius + 1) / sigma) ** 2)
-    kernel /= kernel.sum()
-    for axis in (0, 1):
-        pad = [(radius, radius) if a == axis else (0, 0) for a in (0, 1)]
-        padded = np.pad(values, pad, mode="edge")
-        values = np.apply_along_axis(np.convolve, axis, padded, kernel, mode="valid")
-    return values
 
 
 def flow_field(luma: np.ndarray, smoothing: float, angle: float, bias: float) -> np.ndarray:
