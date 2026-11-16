@@ -78,7 +78,8 @@ uv run effekt string-art photo.png out.png
 `strokes.bin` can be any file; `colours-natural` draws one stroke per byte.
 Every effect has tuning options, listed by `uv run effekt <effect> --help`.
 [docs/examples.md](docs/examples.md) shows what each effect and option does to
-a test image.
+a test image, and [docs/tutorial](docs/tutorial/README.md) explains, step by
+step, how to write effects like these yourself.
 
 The effects are also importable:
 

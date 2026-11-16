@@ -1,0 +1,6 @@
+photo size (width, height): (512, 512)
+colour array shape: (512, 512, 3)
+grey array shape: (512, 512)
+top-left pixel in colour: [226 137 125]
+top-left pixel in grey: 162
+darkest and lightest grey: 25 245
