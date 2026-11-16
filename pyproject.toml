@@ -42,6 +42,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4", "PTH", "RUF"]
 extend-immutable-calls = [
     "effekt.bloom.BloomParams",
     "effekt.colours_natural.ColoursParams",
+    "effekt.colours_spiral.SpiralParams",
     "effekt.ebs.EbsParams",
     "effekt.hatch.HatchParams",
     "effekt.quant.QuantParams",

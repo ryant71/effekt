@@ -193,6 +193,58 @@ SECTIONS = (
         ),
     ),
     Section(
+        "colours-spiral",
+        "A single line spirals out from the centre of the image. It is thicker where the image "
+        "is darker, takes the colour underneath, and is pulled sideways towards darker areas. "
+        "The background stays transparent. This is a new effect: only a fragment of the "
+        "original script of this name survives.",
+        (
+            Example(
+                "spiral-default",
+                "Defaults",
+                "{image} out.png",
+                "Turns 8 output pixels apart on a canvas twice the size of the input. In the "
+                "darkest areas the line is as wide as the gap between turns, so they close up.",
+            ),
+            Example(
+                "spiral-black",
+                "`--colour 0 --bend 0`",
+                "{image} out.png --colour 0 --bend 0",
+                "Black ink and no pull from the image leave a perfect spiral whose width alone "
+                "carries the picture.",
+            ),
+            Example(
+                "spiral-bend",
+                "`--bend 4 --spacing 12`",
+                "{image} out.png --bend 4 --spacing 12",
+                "A stronger pull makes the line swerve at every edge, and wider turns give it "
+                "room to. Edges become ragged and textured areas break into waves.",
+            ),
+            Example(
+                "spiral-fine",
+                "`--spacing 4`",
+                "{image} out.png --spacing 4",
+                "Turns half as far apart resolve more of the image and take about twice as "
+                "long to draw.",
+            ),
+            Example(
+                "spiral-thin",
+                "`--width 0.6 --min-width 0.3`",
+                "{image} out.png --width 0.6 --min-width 0.3",
+                "Narrowing the range between the thinnest and thickest line keeps every turn "
+                "separate and flattens the contrast.",
+            ),
+            Example(
+                "spiral-portrait",
+                "A portrait with `--scale 1`",
+                "{image} out.png --scale 1",
+                "The spiral runs out to the corners, so on a tall image the last turns are "
+                "only arcs at the top and bottom.",
+                PORTRAIT,
+            ),
+        ),
+    ),
+    Section(
         "ebs",
         "A swarm of entities flocks across the canvas leaving coloured trails, then respawns "
         "somewhere else. The last argument is the density: the number of steps the swarm "
