@@ -3,6 +3,8 @@
 Generative image effects rendered with cairo. Each effect reads a reference
 image and writes a PNG.
 
+![Two photos, each followed by the same photo redrawn by several of the effects](docs/collage.jpg)
+
 | Effect            | What it does                                                        |
 | ----------------- | ------------------------------------------------------------------- |
 | `bloom`           | Every pixel emits an additive disc sized by its brightness.         |
