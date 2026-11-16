@@ -235,6 +235,57 @@ SECTIONS = (
         ),
     ),
     Section(
+        "hatch",
+        "Draws short pen strokes that follow the image's contours, like the lines of an "
+        "engraving. Each stroke only crosses pixels darker than its own randomly chosen ink "
+        "level, so dark areas fill with lines and light areas stay as white paper. Results "
+        "vary between runs unless `--seed` is given.",
+        (
+            Example(
+                "hatch-default",
+                "Defaults",
+                "{image} out.png --seed 1",
+                "Strokes up to 16 input pixels long on a canvas twice the size of the input. "
+                "Where the image is flat they fall back to a 45 degree hatch.",
+            ),
+            Example(
+                "hatch-bias-0",
+                "`--bias 0`",
+                "{image} out.png --seed 1 --bias 0",
+                "With no pull towards `--angle`, strokes follow whatever faint contours the "
+                "flat areas have, which turns them into swirls.",
+            ),
+            Example(
+                "hatch-bias-high",
+                "`--bias 1 --angle 20`",
+                "{image} out.png --seed 1 --bias 1 --angle 20",
+                "A strong pull gives an almost uniform hatch at the chosen angle; only the "
+                "sharpest edges still bend the strokes.",
+            ),
+            Example(
+                "hatch-dense",
+                "`--density 0.3 --length 40`",
+                "{image} out.png --seed 1 --density 0.3 --length 40",
+                "Half as many strokes again, each allowed to run more than twice as far. Lines "
+                "become long and flowing and the shadows start to close up.",
+            ),
+            Example(
+                "hatch-colour",
+                "`--colour 1 --density 1`",
+                "{image} out.png --seed 1 --colour 1 --density 1",
+                "Each stroke takes the colour of the pixel it starts from, and a high density "
+                "covers most of the paper, for a coloured-pencil look.",
+            ),
+            Example(
+                "hatch-portrait",
+                "A portrait with `--scale 1`",
+                "{image} out.png --seed 1 --scale 1",
+                "At the size of the input the same strokes are finer relative to the page.",
+                PORTRAIT,
+            ),
+        ),
+    ),
+    Section(
         "quant",
         "Splits the image into quarters wherever it finds detail and strokes each cell in the "
         "colour found there, so busy areas get small marks and calm areas large ones. The "

@@ -5,7 +5,7 @@ import pytest
 import shtab
 from PIL import Image
 
-from effekt import Reference, bloom, colours_natural, ebs, quant, regrain
+from effekt import Reference, bloom, colours_natural, ebs, hatch, quant, regrain
 from effekt.cli import build_parser, main
 
 ENTROPY = bytes(range(256)) * 2
@@ -36,10 +36,11 @@ RENDERERS = {
     "bloom": lambda ref: bloom.render(ref, ENTROPY),
     "colours-natural": lambda ref: colours_natural.render(ref, ENTROPY),
     "ebs": lambda ref: ebs.render(ref, 60),
+    "hatch": lambda ref: hatch.render(ref, hatch.HatchParams(seed=1)),
     "quant": lambda ref: quant.render(ref),
     "regrain": lambda ref: regrain.render(ref, regrain.RegrainParams(seed=1)),
 }
-SCALES = {"bloom": 2, "colours-natural": 4, "ebs": 1, "quant": 4, "regrain": 4}
+SCALES = {"bloom": 2, "colours-natural": 4, "ebs": 1, "hatch": 2, "quant": 4, "regrain": 4}
 
 
 @pytest.mark.parametrize("effect", RENDERERS)
@@ -117,6 +118,39 @@ def test_ebs_stops_at_density(reference):
     assert calls == [(24, 60), (48, 60), (60, 60)]
 
 
+def test_hatch_follows_contours():
+    # Brightness changes only from left to right, so the contours are vertical.
+    luma = np.linspace(0, 255, 32)[None, :].repeat(32, axis=0)
+
+    field = hatch.flow_field(luma, smoothing=1.0, angle=0.0, bias=0.0)
+
+    assert np.allclose(np.abs(np.sin(field)), 1.0)
+
+
+def test_hatch_falls_back_to_the_angle_on_flat_images():
+    field = hatch.flow_field(np.full((16, 16), 128.0), 1.0, np.radians(30.0), 0.05)
+
+    assert np.allclose(field, np.radians(30.0))
+
+
+def test_hatch_is_denser_where_the_image_is_darker():
+    luma = np.full((32, 64, 3), 230, dtype=np.uint8)
+    luma[:, :32] = 40
+    reference = Reference.from_image(Image.fromarray(luma, "RGB"))
+
+    result = pixels(hatch.render(reference, hatch.HatchParams(scale=1, seed=1)))[..., 0]
+
+    assert result[:, :28].mean() < result[:, 36:].mean() - 50
+
+
+def test_hatch_leaves_white_images_blank():
+    reference = Reference.from_image(Image.new("RGB", (16, 16), "white"))
+
+    result = pixels(hatch.render(reference, hatch.HatchParams(seed=1)))
+
+    assert (result == 255).all()
+
+
 def test_quant_difference_map():
     luma = np.array([[10, 10, 10], [10, 14, 10], [10, 10, 200]], dtype=np.uint8)
 
@@ -153,6 +187,7 @@ def test_quant_threshold_limits_subdivision(reference):
         ["bloom", "{image}", "{output}", "--scale", "1", "--entropy", "{entropy}"],
         ["colours-natural", "{entropy}", "{image}", "{output}", "--scale", "2"],
         ["ebs", "{image}", "{output}", "30"],
+        ["hatch", "{image}", "{output}", "--scale", "1", "--seed", "3"],
         ["quant", "{image}", "{output}"],
         ["regrain", "{image}", "{output}", "--scale", "1", "--seed", "3"],
     ],
@@ -191,7 +226,7 @@ def test_cli_prints_a_completion_script(shell, capsys):
         main(["--print-completion", shell])
     assert exit_info.value.code == 0
     script = capsys.readouterr().out
-    for effect in ("bloom", "colours-natural", "ebs", "quant", "regrain"):
+    for effect in ("bloom", "colours-natural", "ebs", "hatch", "quant", "regrain"):
         assert effect in script
     assert "--entropy" in script
 
@@ -199,5 +234,5 @@ def test_cli_prints_a_completion_script(shell, capsys):
 def test_cli_completes_paths_as_files():
     commands = build_parser()._subparsers._group_actions[0].choices
     paths = [a for sub in commands.values() for a in sub._actions if a.type is Path]
-    assert len(paths) == 12
+    assert len(paths) == 14
     assert all(a.complete == shtab.FILE for a in paths)

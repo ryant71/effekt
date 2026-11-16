@@ -43,6 +43,7 @@ extend-immutable-calls = [
     "effekt.bloom.BloomParams",
     "effekt.colours_natural.ColoursParams",
     "effekt.ebs.EbsParams",
+    "effekt.hatch.HatchParams",
     "effekt.quant.QuantParams",
     "effekt.regrain.RegrainParams",
 ]

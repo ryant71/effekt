@@ -11,7 +11,7 @@ from typing import Any
 
 import shtab
 
-from . import bloom, colours_natural, ebs, quant, regrain
+from . import bloom, colours_natural, ebs, hatch, quant, regrain
 from ._common import ProgressCallback, Reference
 
 REDRAW_INTERVAL = 0.1
@@ -86,6 +86,10 @@ def _ebs(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     )
 
 
+def _hatch(args: argparse.Namespace, progress: ProgressCallback) -> Any:
+    return hatch.render(Reference.load(args.input), _params(hatch.HatchParams, args), progress)
+
+
 def _quant(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     return quant.render(Reference.load(args.input), _params(quant.QuantParams, args), progress)
 
@@ -134,6 +138,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_argument("input", type=Path, help=image_help)
     sub.add_argument("output", type=Path, help=output_help)
     sub.add_argument("density", type=int, help="number of swarm steps to draw")
+
+    sub = command("hatch", hatch, _hatch, hatch.HatchParams)
+    sub.add_argument("input", type=Path, help=image_help)
+    sub.add_argument("output", type=Path, help=output_help)
 
     sub = command("quant", quant, _quant, quant.QuantParams)
     sub.add_argument("input", type=Path, help=image_help)
