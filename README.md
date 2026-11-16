@@ -34,6 +34,27 @@ directory to your `PATH`. After pulling new changes, reinstall with
 `uv tool install --reinstall .`; `uv tool uninstall effekt` removes it. With the
 command installed, drop the `uv run` prefix from the examples below.
 
+### Shell completion
+
+`effekt --print-completion <shell>` prints a completion script for `bash`,
+`zsh`, `tcsh`, `fish` or `powershell`. It completes effect names, options and
+file arguments. Regenerate the script after upgrading, since it is a snapshot of
+the options at the time it was written.
+
+```sh
+# zsh: any directory on $fpath works; add the fpath line to ~/.zshrc before compinit
+mkdir -p ~/.local/share/zsh_completion
+effekt --print-completion zsh > ~/.local/share/zsh_completion/_effekt
+fpath=(~/.local/share/zsh_completion $fpath)
+
+# bash
+mkdir -p ~/.local/share/bash-completion/completions
+effekt --print-completion bash > ~/.local/share/bash-completion/completions/effekt
+
+# fish
+effekt --print-completion fish > ~/.config/fish/completions/effekt.fish
+```
+
 ## Usage
 
 ```sh

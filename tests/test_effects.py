@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
+import shtab
 from PIL import Image
 
 from effekt import Reference, bloom, colours_natural, ebs, quant, regrain
-from effekt.cli import main
+from effekt.cli import build_parser, main
 
 ENTROPY = bytes(range(256)) * 2
 
@@ -180,3 +183,21 @@ def test_cli_reports_a_missing_input(tmp_path, capsys):
 
     assert exit_code == 1
     assert "missing.png" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("shell", ["bash", "zsh", "tcsh", "fish", "powershell"])
+def test_cli_prints_a_completion_script(shell, capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--print-completion", shell])
+    assert exit_info.value.code == 0
+    script = capsys.readouterr().out
+    for effect in ("bloom", "colours-natural", "ebs", "quant", "regrain"):
+        assert effect in script
+    assert "--entropy" in script
+
+
+def test_cli_completes_paths_as_files():
+    commands = build_parser()._subparsers._group_actions[0].choices
+    paths = [a for sub in commands.values() for a in sub._actions if a.type is Path]
+    assert len(paths) == 12
+    assert all(a.complete == shtab.FILE for a in paths)

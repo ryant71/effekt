@@ -9,6 +9,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
+import shtab
+
 from . import bloom, colours_natural, ebs, quant, regrain
 from ._common import ProgressCallback, Reference
 
@@ -98,6 +100,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="effekt", description="Generative image effects rendered with cairo."
     )
+    shtab.add_argument_to(
+        parser,
+        "--print-completion",
+        help="print a shell completion script and exit",
+    )
     commands = parser.add_subparsers(dest="effect", required=True, metavar="EFFECT")
 
     def command(name: str, module: Any, run: Any, params_type: type) -> argparse.ArgumentParser:
@@ -138,6 +145,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     for sub in commands.choices.values():
         _add_params(sub, sub.get_default("params_type"))
+        for action in sub._actions:
+            if action.type is Path:
+                action.complete = shtab.FILE  # type: ignore[attr-defined]
 
     return parser
 

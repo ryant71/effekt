@@ -10,6 +10,7 @@ dependencies = [
     "pycairo>=1.27",
     "numpy>=2.0",
     "pillow>=11.0",
+    "shtab>=1.13.0",
 ]
 
 [project.scripts]
