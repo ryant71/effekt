@@ -5,7 +5,7 @@ import pytest
 import shtab
 from PIL import Image
 
-from effekt import Reference, bloom, colours_natural, ebs, hatch, quant, regrain
+from effekt import Reference, bloom, colours_natural, colours_spiral, ebs, hatch, quant, regrain
 from effekt.cli import build_parser, main
 
 ENTROPY = bytes(range(256)) * 2
@@ -35,12 +35,21 @@ def reference() -> Reference:
 RENDERERS = {
     "bloom": lambda ref: bloom.render(ref, ENTROPY),
     "colours-natural": lambda ref: colours_natural.render(ref, ENTROPY),
+    "colours-spiral": lambda ref: colours_spiral.render(ref),
     "ebs": lambda ref: ebs.render(ref, 60),
     "hatch": lambda ref: hatch.render(ref, hatch.HatchParams(seed=1)),
     "quant": lambda ref: quant.render(ref),
     "regrain": lambda ref: regrain.render(ref, regrain.RegrainParams(seed=1)),
 }
-SCALES = {"bloom": 2, "colours-natural": 4, "ebs": 1, "hatch": 2, "quant": 4, "regrain": 4}
+SCALES = {
+    "bloom": 2,
+    "colours-natural": 4,
+    "colours-spiral": 2,
+    "ebs": 1,
+    "hatch": 2,
+    "quant": 4,
+    "regrain": 4,
+}
 
 
 @pytest.mark.parametrize("effect", RENDERERS)
@@ -109,6 +118,37 @@ def test_colours_draws_one_stroke_per_byte(reference):
     )
 
     assert calls == [(100, 512), (200, 512), (300, 512), (400, 512), (500, 512), (512, 512)]
+
+
+def test_spiral_starts_at_the_centre_and_reaches_the_corners():
+    reference = Reference.from_image(Image.new("RGB", (32, 32), "black"))
+
+    alpha = pixels(colours_spiral.render(reference))[..., 3]
+
+    assert alpha[32, 32] == 255
+    assert alpha[0, 0] and alpha[0, -1] and alpha[-1, 0] and alpha[-1, -1]
+
+
+def test_spiral_draws_thicker_where_the_image_is_darker():
+    halves = np.full((32, 64, 3), 230, dtype=np.uint8)
+    halves[:, :32] = 40
+    reference = Reference.from_image(Image.fromarray(halves, "RGB"))
+
+    alpha = pixels(colours_spiral.render(reference, colours_spiral.SpiralParams(scale=1)))[..., 3]
+
+    assert alpha[:, :28].mean() > alpha[:, 36:].mean() * 2
+
+
+def test_spiral_takes_the_image_colour(reference):
+    black = pixels(colours_spiral.render(reference, colours_spiral.SpiralParams(colour=0.0)))
+
+    assert black[..., 3].any()
+    assert not black[..., :3].any()
+
+
+def test_spiral_rejects_zero_spacing(reference):
+    with pytest.raises(ValueError, match="spacing"):
+        colours_spiral.render(reference, colours_spiral.SpiralParams(spacing=0.0))
 
 
 def test_ebs_stops_at_density(reference):
@@ -186,6 +226,7 @@ def test_quant_threshold_limits_subdivision(reference):
         ["bloom", "{image}", "{output}", "--scale", "1"],
         ["bloom", "{image}", "{output}", "--scale", "1", "--entropy", "{entropy}"],
         ["colours-natural", "{entropy}", "{image}", "{output}", "--scale", "2"],
+        ["colours-spiral", "{image}", "{output}", "--scale", "1"],
         ["ebs", "{image}", "{output}", "30"],
         ["hatch", "{image}", "{output}", "--scale", "1", "--seed", "3"],
         ["quant", "{image}", "{output}"],
@@ -226,7 +267,15 @@ def test_cli_prints_a_completion_script(shell, capsys):
         main(["--print-completion", shell])
     assert exit_info.value.code == 0
     script = capsys.readouterr().out
-    for effect in ("bloom", "colours-natural", "ebs", "hatch", "quant", "regrain"):
+    for effect in (
+        "bloom",
+        "colours-natural",
+        "colours-spiral",
+        "ebs",
+        "hatch",
+        "quant",
+        "regrain",
+    ):
         assert effect in script
     assert "--entropy" in script
 
@@ -234,5 +283,5 @@ def test_cli_prints_a_completion_script(shell, capsys):
 def test_cli_completes_paths_as_files():
     commands = build_parser()._subparsers._group_actions[0].choices
     paths = [a for sub in commands.values() for a in sub._actions if a.type is Path]
-    assert len(paths) == 14
+    assert len(paths) == 16
     assert all(a.complete == shtab.FILE for a in paths)

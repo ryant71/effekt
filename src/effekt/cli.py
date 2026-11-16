@@ -11,7 +11,7 @@ from typing import Any
 
 import shtab
 
-from . import bloom, colours_natural, ebs, hatch, quant, regrain
+from . import bloom, colours_natural, colours_spiral, ebs, hatch, quant, regrain
 from ._common import ProgressCallback, Reference
 
 REDRAW_INTERVAL = 0.1
@@ -80,6 +80,12 @@ def _colours(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     )
 
 
+def _spiral(args: argparse.Namespace, progress: ProgressCallback) -> Any:
+    return colours_spiral.render(
+        Reference.load(args.input), _params(colours_spiral.SpiralParams, args), progress
+    )
+
+
 def _ebs(args: argparse.Namespace, progress: ProgressCallback) -> Any:
     return ebs.render(
         Reference.load(args.input), args.density, _params(ebs.EbsParams, args), progress
@@ -131,6 +137,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = command("colours-natural", colours_natural, _colours, colours_natural.ColoursParams)
     sub.add_argument("strokes", type=Path, help="any file; each byte steers one stroke")
+    sub.add_argument("input", type=Path, help=image_help)
+    sub.add_argument("output", type=Path, help=output_help)
+
+    sub = command("colours-spiral", colours_spiral, _spiral, colours_spiral.SpiralParams)
     sub.add_argument("input", type=Path, help=image_help)
     sub.add_argument("output", type=Path, help=output_help)
 
