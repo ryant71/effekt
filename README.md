@@ -9,6 +9,7 @@ image and writes a PNG.
 | `regrain`         | Rebuilds the image from random red, green and blue film grains.     |
 | `colours-natural` | A pen wanders over the image, steered by the bytes of a file.       |
 | `ebs`             | Swarms of entities flock across the image and leave coloured trails. |
+| `hatch`           | Short pen strokes follow the image's contours, denser where it is darker. |
 | `quant`           | Subdivides the image wherever it has detail and strokes each cell.  |
 
 ## Install
@@ -62,6 +63,7 @@ uv run effekt bloom photo.png out.png
 uv run effekt regrain photo.png out.png --seed 1
 uv run effekt colours-natural strokes.bin photo.png out.png
 uv run effekt ebs photo.png out.png 5000
+uv run effekt hatch photo.png out.png --seed 1
 uv run effekt quant photo.png out.png
 ```
 
